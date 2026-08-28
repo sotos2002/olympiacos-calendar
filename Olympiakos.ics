@@ -1,0 +1,40 @@
+BEGIN:VCALENDAR
+VERSION:2.0
+PRODID:-//Sotiris//Olympiacos Calendar//EL
+CALSCALE:GREGORIAN
+METHOD:PUBLISH
+X-WR-CALNAME:Ολυμπιακός 🔴⚪
+X-WR-TIMEZONE:Europe/Athens
+BEGIN:VEVENT
+UID:olympiacos-2026-0830-football@sotiris
+DTSTAMP:20260828T210000Z
+DTSTART;TZID=Europe/Athens:20260830T210000
+DTEND;TZID=Europe/Athens:20260830T230000
+SUMMARY:⚽ Αστέρας Τρίπολης - Ολυμπιακός
+DESCRIPTION:Stoiximan Super League\n📺 Novasports
+END:VEVENT
+BEGIN:VEVENT
+UID:olympiacos-2026-0924-basket@sotiris
+DTSTAMP:20260828T210000Z
+DTSTART;TZID=Europe/Athens:20260924T213000
+DTEND;TZID=Europe/Athens:20260924T233000
+SUMMARY:🏀 Μπασκόνια - Ολυμπιακός
+DESCRIPTION:EuroLeague\n📺 Novasports
+END:VEVENT
+BEGIN:VEVENT
+UID:olympiacos-2026-0929-basket@sotiris
+DTSTAMP:20260828T210000Z
+DTSTART;TZID=Europe/Athens:20260929T200000
+DTEND;TZID=Europe/Athens:20260929T220000
+SUMMARY:🏀 Ζάλγκιρις - Ολυμπιακός
+DESCRIPTION:EuroLeague\n📺 Novasports
+END:VEVENT
+BEGIN:VEVENT
+UID:olympiacos-2026-1001-basket@sotiris
+DTSTAMP:20260828T210000Z
+DTSTART;TZID=Europe/Athens:20261001T213000
+DTEND;TZID=Europe/Athens:20261001T233000
+SUMMARY:🏀 Βίρτους Μπολόνια - Ολυμπιακός
+DESCRIPTION:EuroLeague\n📺 Novasports
+END:VEVENT
+a
