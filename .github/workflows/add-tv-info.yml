@@ -16,7 +16,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Add broadcaster information
+      - name: Validate and normalize ICS
         shell: python
         run: |
           from pathlib import Path
@@ -24,10 +24,13 @@ jobs:
           p = Path('Olympiakos.ics')
           text = p.read_text(encoding='utf-8')
 
+          # Remove stray backslashes that were accidentally written at line ends.
+          text = text.replace('\\\n', '\n')
+          text = text.replace('\r\n', '\n').replace('\r', '\n')
+
           lines = text.splitlines()
           out = []
           current_summary = ''
-          current_description = ''
 
           nova_home = ('Αστέρας', 'Λεβαδειακός', 'ΠΑΟΚ', 'Άρης', 'Ατρόμητος', 'Καλαμάτα')
           cos_home = ('Ολυμπιακός', 'ΑΕΚ', 'ΟΦΗ', 'Βόλος', 'Κηφισιά', 'Παναιτωλικός')
@@ -35,35 +38,33 @@ jobs:
           for line in lines:
               if line.startswith('SUMMARY:'):
                   current_summary = line[8:]
-              if line.startswith('DESCRIPTION:'):
-                  current_description = line[12:]
 
-                  if 'TV:' not in current_description and current_summary:
-                      if current_summary.startswith('🏀'):
+              if line.startswith('DESCRIPTION:') and 'TV:' not in line and current_summary:
+                  if current_summary.startswith('🏀'):
+                      tv = '📺 TV: Novasports'
+                  elif current_summary.startswith('⚽'):
+                      matchup = current_summary[2:].strip()
+                      home = matchup.split(' - ', 1)[0].strip()
+                      if any(home.startswith(x) for x in nova_home):
                           tv = '📺 TV: Novasports'
-                      elif current_summary.startswith('⚽'):
-                          matchup = current_summary[2:].strip()
-                          home = matchup.split(' - ', 1)[0].strip()
-                          if any(home.startswith(x) for x in nova_home):
-                              tv = '📺 TV: Novasports'
-                          elif any(home.startswith(x) for x in cos_home):
-                              tv = '📺 TV: COSMOTE SPORT'
-                          else:
-                              tv = ''
+                      elif any(home.startswith(x) for x in cos_home):
+                          tv = '📺 TV: COSMOTE SPORT'
                       else:
                           tv = ''
+                  else:
+                      tv = ''
 
-                      if tv:
-                          line = line + '\\n' + tv
+                  if tv:
+                      line = line + '\\n' + tv
 
-              out.append(line)
+              out.append(line.rstrip('\\'))
 
-          p.write_text('\n'.join(out) + '\n', encoding='utf-8')
+          p.write_text('\n'.join(out).rstrip() + '\n', encoding='utf-8')
 
-      - name: Commit TV updates
+      - name: Commit normalized calendar
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add Olympiakos.ics
-          git diff --cached --quiet || git commit -m 'Add TV broadcaster information'
+          git diff --cached --quiet || git commit -m 'Normalize ICS calendar'
           git push
