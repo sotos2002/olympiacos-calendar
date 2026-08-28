@@ -1,0 +1,69 @@
+name: Add TV info to Olympiacos calendar
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  add-tv:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Add broadcaster information
+        shell: python
+        run: |
+          from pathlib import Path
+
+          p = Path('Olympiakos.ics')
+          text = p.read_text(encoding='utf-8')
+
+          lines = text.splitlines()
+          out = []
+          current_summary = ''
+          current_description = ''
+
+          nova_home = ('Αστέρας', 'Λεβαδειακός', 'ΠΑΟΚ', 'Άρης', 'Ατρόμητος', 'Καλαμάτα')
+          cos_home = ('Ολυμπιακός', 'ΑΕΚ', 'ΟΦΗ', 'Βόλος', 'Κηφισιά', 'Παναιτωλικός')
+
+          for line in lines:
+              if line.startswith('SUMMARY:'):
+                  current_summary = line[8:]
+              if line.startswith('DESCRIPTION:'):
+                  current_description = line[12:]
+
+                  if 'TV:' not in current_description and current_summary:
+                      if current_summary.startswith('🏀'):
+                          tv = '📺 TV: Novasports'
+                      elif current_summary.startswith('⚽'):
+                          matchup = current_summary[2:].strip()
+                          home = matchup.split(' - ', 1)[0].strip()
+                          if any(home.startswith(x) for x in nova_home):
+                              tv = '📺 TV: Novasports'
+                          elif any(home.startswith(x) for x in cos_home):
+                              tv = '📺 TV: COSMOTE SPORT'
+                          else:
+                              tv = ''
+                      else:
+                          tv = ''
+
+                      if tv:
+                          line = line + '\\n' + tv
+
+              out.append(line)
+
+          p.write_text('\n'.join(out) + '\n', encoding='utf-8')
+
+      - name: Commit TV updates
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add Olympiakos.ics
+          git diff --cached --quiet || git commit -m 'Add TV broadcaster information'
+          git push
