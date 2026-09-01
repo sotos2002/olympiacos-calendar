@@ -28,24 +28,6 @@ jobs:
           text = text.replace('\\\n', '\n')
           text = text.replace('\r\n', '\n').replace('\r', '\n')
 
-          # Add the newly confirmed EuroLeague Super Cup semi-final if it is not already present.
-          if 'UID:oly-20260918-supercup-sf@sotiris' not in text:
-              event_lines = [
-                  'BEGIN:VEVENT',
-                  'UID:oly-20260918-supercup-sf@sotiris',
-                  'DTSTAMP:20260901T060000Z',
-                  'DTSTART;TZID=Europe/Athens:20260918T170000',
-                  'DTEND;TZID=Europe/Athens:20260918T190000',
-                  'SUMMARY:🏀 Φενέρμπαχτσε - Ολυμπιακός',
-                  'LOCATION:Etihad Arena',
-                  'DESCRIPTION:EuroLeague Super Cup - Semi Final | Ώρα: 17:00',
-                  'END:VEVENT',
-              ]
-              event = '\n'.join(event_lines) + '\n'
-              marker = 'BEGIN:VEVENT\nUID:oly-20260924-basket@sotiris'
-              if marker in text:
-                  text = text.replace(marker, event + marker, 1)
-
           lines = text.splitlines()
           out = []
           current_summary = ''
@@ -84,5 +66,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add Olympiakos.ics
-          git diff --cached --quiet || git commit -m 'Update Olympiacos calendar'
+          git diff --cached --quiet || git commit -m 'Normalize ICS calendar'
           git push
