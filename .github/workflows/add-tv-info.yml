@@ -16,7 +16,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Validate and normalize ICS
+      - name: Validate, normalize and add confirmed fixtures
         shell: python
         run: |
           from pathlib import Path
@@ -59,12 +59,32 @@ jobs:
 
               out.append(line.rstrip('\\'))
 
-          p.write_text('\n'.join(out).rstrip() + '\n', encoding='utf-8')
+          text = '\n'.join(out).rstrip() + '\n'
+
+          # Confirmed fixture found today on the official Olympiacos BC schedule:
+          # Crete International Basketball Tournament semi-final, 04/09/2026 21:00.
+          # Keep a stable UID so later edits update the same event.
+          uid = 'oly-20260904-crete-ibt-sf@sotiris'
+          if f'UID:{uid}' not in text:
+              event = (
+                  'BEGIN:VEVENT\n'
+                  f'UID:{uid}\n'
+                  'DTSTAMP:20260903T060000Z\n'
+                  'DTSTART;TZID=Europe/Athens:20260904T210000\n'
+                  'DTEND;TZID=Europe/Athens:20260904T230000\n'
+                  'SUMMARY:🏀 Ολυμπιακός - Φενέρμπαχτσε\n'
+                  'LOCATION:Δύο Αοράκια, Ηράκλειο\n'
+                  'DESCRIPTION:Crete International Basketball Tournament - Semi Final\\n📺 TV: COSMOTE SPORT 4 HD\n'
+                  'END:VEVENT\n'
+              )
+              text = text.replace('END:VCALENDAR\n', event + 'END:VCALENDAR\n')
+
+          p.write_text(text, encoding='utf-8')
 
       - name: Commit normalized calendar
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add Olympiakos.ics
-          git diff --cached --quiet || git commit -m 'Normalize ICS calendar'
+          git diff --cached --quiet || git commit -m 'Update confirmed Olympiacos fixture'
           git push
