@@ -590,4 +590,13 @@ DTEND;TZID=Europe/Athens:20270416T231500
 SUMMARY:🏀 Ολυμπιακός - Βαλένθια
 DESCRIPTION:EuroLeague R38 | 📺 Novasports\n📺 TV: Novasports
 END:VEVENT
+BEGIN:VEVENT
+UID:oly-20260904-crete-ibt-sf@sotiris
+DTSTAMP:20260903T060000Z
+DTSTART;TZID=Europe/Athens:20260904T210000
+DTEND;TZID=Europe/Athens:20260904T230000
+SUMMARY:🏀 Ολυμπιακός - Φενέρμπαχτσε
+LOCATION:Δύο Αοράκια, Ηράκλειο
+DESCRIPTION:Crete International Basketball Tournament - Semi Final\n📺 TV: COSMOTE SPORT 4 HD
+END:VEVENT
 END:VCALENDAR
