@@ -16,25 +16,20 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Restore calendar baseline and update confirmed fixtures/results
+      - name: Normalize, add confirmed fixtures, scores and highlights
         shell: python
         run: |
           from pathlib import Path
-          import subprocess
 
           p = Path('Olympiakos.ics')
-
-          # One-time recovery from the known-good calendar revision before the
-          # accidental truncation. Fetch it explicitly because checkout is shallow.
-          subprocess.run(['git', 'fetch', '--no-tags', 'origin', '8bada3bbd236863f8717709aea1c271045ba5573'], check=True)
-          subprocess.run(['git', 'checkout', '8bada3bbd236863f8717709aea1c271045ba5573', '--', 'Olympiakos.ics'], check=True)
-
           text = p.read_text(encoding='utf-8')
           text = text.replace('\\\n', '\n').replace('\r\n', '\n').replace('\r', '\n')
 
+          # Confirmed final results and Gazzetta highlights. Keep UIDs stable.
           results = {
               'oly-20260830-football@sotiris': ('0-1', 'Αστέρας Τρίπολης 0-1 Ολυμπιακός', 'https://www.gazzetta.gr/football/superleague/2565210/asteras-olympiakos-0-1-ta-highlights-tis-erythroleykis-nikis'),
               'oly-20260902-cup-ael@sotiris': ('0-4', 'ΑΕΛ 0-4 Ολυμπιακός', 'https://www.gazzetta.gr/football/kypello-elladas/2566001/ael-olympiakos-ta-highlights-toy-0-4-ton-erythroleykon'),
+              'oly-20260904-crete-ibt-sf@sotiris': ('82-77', 'Ολυμπιακός 82-77 Φενέρμπαχτσε', 'https://www.gazzetta.gr/basketball/euroleague/2566566/olympiakos-fenermpahtse-82-77-ta-highlights-tis-erythroleykis-nikis'),
           }
 
           lines = text.splitlines()
@@ -43,35 +38,20 @@ jobs:
           for line in lines:
               if line.startswith('UID:'):
                   current_uid = line[4:]
+
               if line.startswith('SUMMARY:') and current_uid in results:
                   score, _, _ = results[current_uid]
                   if '| ΤΕΛΙΚΟ ' not in line:
                       line += ' | ΤΕΛΙΚΟ ' + score
+
               if line.startswith('DESCRIPTION:') and current_uid in results:
                   _, score_text, highlight = results[current_uid]
                   if '🎬 Highlights:' not in line:
                       line += '\\n\\nΤΕΛΙΚΟ ΣΚΟΡ: ' + score_text + '\\n\\n🎬 Highlights: ' + highlight
+
               out.append(line.rstrip('\\'))
 
           text = '\n'.join(out).rstrip() + '\n'
-
-          # Confirmed 04/09/2026 CRETE IBT semi-final, now completed 82-77.
-          uid = 'oly-20260904-crete-ibt-sf@sotiris'
-          if f'UID:{uid}' not in text:
-              event = (
-                  'BEGIN:VEVENT\n'
-                  f'UID:{uid}\n'
-                  'DTSTAMP:20260905T011500Z\n'
-                  'DTSTART;TZID=Europe/Athens:20260904T210000\n'
-                  'DTEND;TZID=Europe/Athens:20260904T230000\n'
-                  'SUMMARY:🏀 Ολυμπιακός - Φενέρμπαχτσε | ΤΕΛΙΚΟ 82-77\n'
-                  'LOCATION:Δύο Αοράκια, Ηράκλειο\n'
-                  'DESCRIPTION:Crete International Basketball Tournament - Semi Final\\n📺 TV: COSMOTE SPORT 4 HD\\n\\nΤΕΛΙΚΟ ΣΚΟΡ: Ολυμπιακός 82-77 Φενέρμπαχτσε\\n\\n🎬 Highlights: https://www.gazzetta.gr/basketball/euroleague/2566566/olympiakos-fenermpahtse-82-77-ta-highlights-tis-erythroleykis-nikis\n'
-                  'URL:https://www.gazzetta.gr/basketball/euroleague/2566566/olympiakos-fenermpahtse-82-77-ta-highlights-tis-erythroleykis-nikis\n'
-                  'END:VEVENT\n'
-              )
-              text = text.replace('END:VCALENDAR\n', event + 'END:VCALENDAR\n')
-
           p.write_text(text, encoding='utf-8')
 
       - name: Commit normalized calendar
@@ -79,5 +59,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add Olympiakos.ics
-          git diff --cached --quiet || git commit -m 'Add final scores and Gazzetta highlights'
+          git diff --cached --quiet || git commit -m 'Update Olympiacos results and highlights'
           git push
