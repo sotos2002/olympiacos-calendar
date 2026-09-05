@@ -1,0 +1,42 @@
+name: Sync confirmed Olympiacos fixtures
+
+on:
+  schedule:
+    - cron: '5 * * * *'
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Add newly confirmed fixtures
+        shell: bash
+        run: |
+          if ! grep -q 'UID:oly-20260908-cup-volos@sotiris' Olympiakos.ics; then
+            sed -i '/END:VCALENDAR/i\\
+          BEGIN:VEVENT\\
+          UID:oly-20260908-cup-volos@sotiris\\
+          DTSTAMP:20260905T000000Z\\
+          DTSTART;TZID=Europe/Athens:20260908T214500\\
+          DTEND;TZID=Europe/Athens:20260908T234500\\
+          SUMMARY:🏆 Ολυμπιακός - Βόλος\\
+          LOCATION:Γ. Καραϊσκάκης\\
+          DESCRIPTION:Κύπελλο Ελλάδας League Phase\\
+          END:VEVENT' Olympiakos.ics
+          fi
+
+      - name: Commit calendar changes
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add Olympiakos.ics
+          git diff --cached --quiet || git commit -m 'Add confirmed Olympiacos Volos cup fixture'
+          git push
