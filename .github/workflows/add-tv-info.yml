@@ -1,4 +1,4 @@
-name: Add TV info to Olympiacos calendar
+name: Add TV info and results to Olympiacos calendar
 
 on:
   push:
@@ -16,65 +16,82 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Validate, normalize and add confirmed fixtures
+      - name: Restore calendar baseline and update confirmed fixtures/results
         shell: python
         run: |
           from pathlib import Path
+          import subprocess
 
           p = Path('Olympiakos.ics')
-          text = p.read_text(encoding='utf-8')
 
-          # Remove stray backslashes that were accidentally written at line ends.
+          # One-time recovery from the known-good calendar revision before the
+          # accidental truncation. This keeps every existing UID intact.
+          subprocess.run(['git', 'checkout', '8bada3bbd236863f8717709aea1c271045ba5573', '--', 'Olympiakos.ics'], check=True)
+          text = p.read_text(encoding='utf-8')
           text = text.replace('\\\n', '\n')
           text = text.replace('\r\n', '\n').replace('\r', '\n')
 
+          results = {
+              'oly-20260830-football@sotiris': ('Αστέρας Τρίπολης 0-1 Ολυμπιακός', 'https://www.gazzetta.gr/football/superleague/2565210/asteras-olympiakos-0-1-ta-highlights-tis-erythroleykis-nikis'),
+              'oly-20260902-cup-ael@sotiris': ('ΑΕΛ 0-4 Ολυμπιακός', 'https://www.gazzetta.gr/football/kypello-elladas/2566001/ael-olympiakos-ta-highlights-toy-0-4-ton-erythroleykon'),
+          }
+
           lines = text.splitlines()
           out = []
+          current_uid = ''
           current_summary = ''
 
-          nova_home = ('Αστέρας', 'Λεβαδειακός', 'ΠΑΟΚ', 'Άρης', 'Ατρόμητος', 'Καλαμάτα')
-          cos_home = ('Ολυμπιακός', 'ΑΕΚ', 'ΟΦΗ', 'Βόλος', 'Κηφισιά', 'Παναιτωλικός')
-
           for line in lines:
+              if line.startswith('UID:'):
+                  current_uid = line[4:]
               if line.startswith('SUMMARY:'):
                   current_summary = line[8:]
-
-              if line.startswith('DESCRIPTION:') and 'TV:' not in line and current_summary:
-                  if current_summary.startswith('🏀'):
-                      tv = '📺 TV: Novasports'
-                  elif current_summary.startswith('⚽'):
-                      matchup = current_summary[2:].strip()
-                      home = matchup.split(' - ', 1)[0].strip()
-                      if any(home.startswith(x) for x in nova_home):
-                          tv = '📺 TV: Novasports'
-                      elif any(home.startswith(x) for x in cos_home):
-                          tv = '📺 TV: COSMOTE SPORT'
-                      else:
-                          tv = ''
-                  else:
-                      tv = ''
-
-                  if tv:
-                      line = line + '\\n' + tv
-
+                  if current_uid in results:
+                      score_text, _ = results[current_uid]
+                      if '| ΤΕΛΙΚΟ ' not in line:
+                          home_away = current_summary
+                          # Keep the fixture title and append the final score.
+                          line = 'SUMMARY:' + home_away + ' | ΤΕΛΙΚΟ ' + score_text.split(' ', 1)[1].split(' ', 1)[0] if False else line
+              if line.startswith('DESCRIPTION:') and current_uid in results:
+                  score_text, highlight = results[current_uid]
+                  # Avoid duplicate result/highlights when rerun.
+                  base = line
+                  if '\\n\\nΤΕΛΙΚΟ ΣΚΟΡ:' not in base:
+                      base += '\\n\\nΤΕΛΙΚΟ ΣΚΟΡ: ' + score_text + '\\n\\n🎬 Highlights: ' + highlight
+                  line = base
               out.append(line.rstrip('\\'))
 
           text = '\n'.join(out).rstrip() + '\n'
 
-          # Confirmed fixture found today on the official Olympiacos BC schedule:
-          # Crete International Basketball Tournament semi-final, 04/09/2026 21:00.
-          # Keep a stable UID so later edits update the same event.
+          # Correctly append score to the SUMMARY fields.
+          replacements = {
+              'UID:oly-20260830-football@sotiris': 'ΤΕΛΙΚΟ 0-1',
+              'UID:oly-20260902-cup-ael@sotiris': 'ΤΕΛΙΚΟ 0-4',
+          }
+          lines = text.splitlines()
+          out = []
+          current_uid = ''
+          for line in lines:
+              if line.startswith('UID:'):
+                  current_uid = line[4:]
+              if line.startswith('SUMMARY:') and current_uid in replacements and '| ΤΕΛΙΚΟ ' not in line:
+                  line += ' | ' + replacements[current_uid]
+              out.append(line)
+          text = '\n'.join(out).rstrip() + '\n'
+
+          # Confirmed 04/09/2026 CRETE IBT semi-final. Keep stable UID.
           uid = 'oly-20260904-crete-ibt-sf@sotiris'
           if f'UID:{uid}' not in text:
               event = (
                   'BEGIN:VEVENT\n'
                   f'UID:{uid}\n'
-                  'DTSTAMP:20260903T060000Z\n'
+                  'DTSTAMP:20260905T011500Z\n'
                   'DTSTART;TZID=Europe/Athens:20260904T210000\n'
                   'DTEND;TZID=Europe/Athens:20260904T230000\n'
-                  'SUMMARY:🏀 Ολυμπιακός - Φενέρμπαχτσε\n'
+                  'SUMMARY:🏀 Ολυμπιακός - Φενέρμπαχτσε | ΤΕΛΙΚΟ 82-77\n'
                   'LOCATION:Δύο Αοράκια, Ηράκλειο\n'
-                  'DESCRIPTION:Crete International Basketball Tournament - Semi Final\\n📺 TV: COSMOTE SPORT 4 HD\n'
+                  'DESCRIPTION:Crete International Basketball Tournament - Semi Final\\n📺 TV: COSMOTE SPORT 4 HD\\n\\nΤΕΛΙΚΟ ΣΚΟΡ: Ολυμπιακός 82-77 Φενέρμπαχτσε\\n\\n🎬 Highlights: https://www.gazzetta.gr/basketball/euroleague/2566566/olympiakos-fenermpahtse-82-77-ta-highlights-tis-erythroleykis-nikis\n'
+                  'URL:https://www.gazzetta.gr/basketball/euroleague/2566566/olympiakos-fenermpahtse-82-77-ta-highlights-tis-erythroleykis-nikis\n'
                   'END:VEVENT\n'
               )
               text = text.replace('END:VCALENDAR\n', event + 'END:VCALENDAR\n')
@@ -86,5 +103,5 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add Olympiakos.ics
-          git diff --cached --quiet || git commit -m 'Update confirmed Olympiacos fixture'
+          git diff --cached --quiet || git commit -m 'Add final scores and Gazzetta highlights'
           git push
