@@ -1,6 +1,8 @@
 name: Add TV info and results to Olympiacos calendar
 
 on:
+  schedule:
+    - cron: '5 * * * *'
   push:
     branches: [main]
   workflow_dispatch:
