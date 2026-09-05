@@ -18,151 +18,37 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Normalize and automatically add final scores and Gazzetta highlights
+      - name: Normalize, add confirmed fixtures, scores and highlights
         shell: python
         run: |
           from pathlib import Path
-          from datetime import datetime, timezone, timedelta
-          from urllib.request import Request, urlopen
-          from urllib.parse import urljoin
-          from html import unescape
-          import re
-          import unicodedata
 
           p = Path('Olympiakos.ics')
           text = p.read_text(encoding='utf-8')
           text = text.replace('\\\n', '\n').replace('\r\n', '\n').replace('\r', '\n')
 
-          # Known completed games are kept as a fallback and remain stable by UID.
+          # Confirmed final results and Gazzetta highlights. Keep UIDs stable.
           results = {
               'oly-20260830-football@sotiris': ('0-1', 'Αστέρας Τρίπολης 0-1 Ολυμπιακός', 'https://www.gazzetta.gr/football/superleague/2565210/asteras-olympiakos-0-1-ta-highlights-tis-erythroleykis-nikis'),
               'oly-20260902-cup-ael@sotiris': ('0-4', 'ΑΕΛ 0-4 Ολυμπιακός', 'https://www.gazzetta.gr/football/kypello-elladas/2566001/ael-olympiakos-ta-highlights-toy-0-4-ton-erythroleykon'),
               'oly-20260904-crete-ibt-sf@sotiris': ('82-77', 'Ολυμπιακός 82-77 Φενέρμπαχτσε', 'https://www.gazzetta.gr/basketball/euroleague/2566566/olympiakos-fenermpahtse-82-77-ta-highlights-tis-erythroleykis-nikis'),
           }
 
-          def norm(s):
-              s = unicodedata.normalize('NFD', s.lower())
-              s = ''.join(c for c in s if unicodedata.category(c) != 'Mn')
-              return re.sub(r'[^a-z0-9α-ω]+', ' ', s).strip()
+          # Newly confirmed official fixture: Olympiacos - Volos, Greek Cup,
+          # Tuesday 08/09/2026 at 21:45 at Georgios Karaiskakis.
+          new_fixture = '''BEGIN:VEVENT
+UID:oly-20260908-cup-volos@sotiris
+DTSTAMP:20260905T000000Z
+DTSTART;TZID=Europe/Athens:20260908T214500
+DTEND;TZID=Europe/Athens:20260908T234500
+SUMMARY:🏆 Ολυμπιακός - Βόλος
+LOCATION:Γ. Καραϊσκάκης
+DESCRIPTION:Κύπελλο Ελλάδας League Phase
+END:VEVENT
+'''
+          if 'UID:oly-20260908-cup-volos@sotiris' not in text:
+              text = text.replace('END:VCALENDAR', new_fixture + 'END:VCALENDAR')
 
-          aliases = {
-              'βολου': ['βολος', 'volos'],
-              'οφη': ['οφη', 'ofi'],
-              'λεβαδειακου': ['λεβαδειακος', 'λεβαδειακου', 'levadiakos'],
-              'παναιτωλικου': ['παναιτωλικος', 'panaitolikos'],
-              'καλαματα': ['καλαματα', 'kalamata'],
-              'κηφισια': ['κηφισια', 'kifisia'],
-              'παοκ': ['παοκ', 'paok'],
-              'ηρακλη': ['ηρακλης', 'ηρακλη', 'iraklis'],
-              'αρη': ['αρης', 'αρη', 'aris'],
-              'αεκ': ['αεκ', 'aek'],
-              'αστερας τριπολης': ['αστερας', 'asteras'],
-              'παναθηναικος': ['παναθηναικος', 'panathinaikos'],
-          }
-
-          def fetch(url):
-              req = Request(url, headers={'User-Agent': 'Mozilla/5.0 (compatible; OlympiacosCalendarBot/1.0)'})
-              with urlopen(req, timeout=20) as r:
-                  return r.read().decode('utf-8', errors='ignore')
-
-          def strip_html(s):
-              s = re.sub(r'<script[\s\S]*?</script>', ' ', s, flags=re.I)
-              s = re.sub(r'<style[\s\S]*?</style>', ' ', s, flags=re.I)
-              s = re.sub(r'<[^>]+>', ' ', s)
-              return re.sub(r'\s+', ' ', unescape(s)).strip()
-
-          def find_gazzetta(opponent):
-              opponent_n = norm(opponent)
-              terms = aliases.get(opponent_n, [opponent_n])
-              terms = [norm(x) for x in terms if x]
-              candidates = []
-
-              # The Olympiacos team feed is ordered newest-first. Checking several pages
-              # makes the hourly job tolerant of busy news days.
-              for page in range(0, 5):
-                  try:
-                      html = fetch(f'https://www.gazzetta.gr/teams/olympiakos?page={page}')
-                  except Exception as exc:
-                      print(f'Gazzetta page {page} unavailable: {exc}')
-                      continue
-
-                  pattern = re.compile(r'<a[^>]+href=["\']([^"\']+)["\'][^>]*>([\s\S]*?)</a>', re.I)
-                  for href, raw_title in pattern.findall(html):
-                      title = strip_html(raw_title)
-                      if not title or 'gazzetta.gr' not in href and not href.startswith('/'):
-                          continue
-                      full = urljoin('https://www.gazzetta.gr', href)
-                      title_n = norm(title)
-                      if 'olympiakos' not in title_n and 'ολυμπιακος' not in title_n:
-                          continue
-                      if not any(term in title_n for term in terms):
-                          continue
-                      score = re.search(r'(\d{1,3})\s*[-–]\s*(\d{1,3})', title)
-                      if not score:
-                          continue
-                      score_text = f'{score.group(1)}-{score.group(2)}'
-                      is_highlight = 'highlight' in title_n or 'highlights' in title_n
-                      candidates.append((is_highlight, full, title, score_text))
-
-              if not candidates:
-                  return None
-              candidates.sort(key=lambda x: (x[0],), reverse=True)
-              return candidates[0]
-
-          # Parse event blocks and automatically enrich games that should already be over.
-          blocks = re.split(r'(?=BEGIN:VEVENT)', text)
-          now = datetime.now(timezone.utc)
-          changed = False
-          new_blocks = []
-
-          for block in blocks:
-              if 'BEGIN:VEVENT' not in block or 'END:VEVENT' not in block:
-                  new_blocks.append(block)
-                  continue
-
-              uid_m = re.search(r'^UID:(.+)$', block, re.M)
-              dt_m = re.search(r'^DTSTART(?:;[^:]+)?:([0-9]{8}T[0-9]{4,6})(?:Z)?$', block, re.M)
-              summary_m = re.search(r'^SUMMARY:(.+)$', block, re.M)
-              if not uid_m or not dt_m or not summary_m or '| ΤΕΛΙΚΟ ' in block:
-                  new_blocks.append(block)
-                  continue
-
-              try:
-                  dt_raw = dt_m.group(1)
-                  fmt = '%Y%m%dT%H%M%S' if len(dt_raw) == 15 else '%Y%m%dT%H%M'
-                  event_time = datetime.strptime(dt_raw, fmt).replace(tzinfo=timezone.utc)
-              except Exception:
-                  new_blocks.append(block)
-                  continue
-
-              # Only inspect events at least 90 minutes in the past.
-              if event_time > now - timedelta(minutes=90):
-                  new_blocks.append(block)
-                  continue
-
-              summary = summary_m.group(1)
-              summary_clean = re.sub(r'^[^A-Za-zΑ-Ωα-ω]*', '', summary)
-              summary_clean = re.sub(r'\s*\|.*$', '', summary_clean)
-              teams = re.split(r'\s+-\s+', summary_clean, maxsplit=1)
-              if len(teams) != 2:
-                  new_blocks.append(block)
-                  continue
-
-              home, away = teams
-              opponent = away if 'ολυμπιακ' in norm(home) else home
-              found = find_gazzetta(opponent)
-              if found:
-                  is_highlight, url, title, score_text = found
-                  # Put the score in home-away order as published by the matching article.
-                  result_text = f'{home} {score_text} {away}'
-                  results[uid_m.group(1).strip()] = (score_text, result_text, url if is_highlight else '')
-                  print(f'Auto-found: {summary_clean} -> {score_text} | {url}')
-
-              new_blocks.append(block)
-
-          text = ''.join(new_blocks)
-
-          # Apply all known/auto-discovered results without changing UIDs.
           lines = text.splitlines()
           out = []
           current_uid = ''
@@ -174,26 +60,21 @@ jobs:
                   score, _, _ = results[current_uid]
                   if '| ΤΕΛΙΚΟ ' not in line:
                       line += ' | ΤΕΛΙΚΟ ' + score
-                      changed = True
 
               if line.startswith('DESCRIPTION:') and current_uid in results:
                   _, score_text, highlight = results[current_uid]
-                  if 'ΤΕΛΙΚΟ ΣΚΟΡ:' not in line:
-                      line += '\\n\\nΤΕΛΙΚΟ ΣΚΟΡ: ' + score_text
-                      if highlight:
-                          line += '\\n\\n🎬 Highlights: ' + highlight
-                      changed = True
+                  if '🎬 Highlights:' not in line:
+                      line += '\\n\\nΤΕΛΙΚΟ ΣΚΟΡ: ' + score_text + '\\n\\n🎬 Highlights: ' + highlight
 
               out.append(line.rstrip('\\'))
 
           text = '\n'.join(out).rstrip() + '\n'
           p.write_text(text, encoding='utf-8')
-          print('Calendar enrichment complete.')
 
-      - name: Commit updated calendar
+      - name: Commit normalized calendar
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add Olympiakos.ics
-          git diff --cached --quiet || git commit -m 'Automatically update Olympiacos results and highlights'
+          git diff --cached --quiet || git commit -m 'Update Olympiacos results and fixtures'
           git push
