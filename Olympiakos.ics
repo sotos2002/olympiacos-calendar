@@ -595,8 +595,8 @@ UID:oly-20260904-crete-ibt-sf@sotiris
 DTSTAMP:20260903T060000Z
 DTSTART;TZID=Europe/Athens:20260904T210000
 DTEND;TZID=Europe/Athens:20260904T230000
-SUMMARY:🏀 Ολυμπιακός - Φενέρμπαχτσε
+SUMMARY:🏀 Ολυμπιακός - Φενέρμπαχτσε | ΤΕΛΙΚΟ 82-77
 LOCATION:Δύο Αοράκια, Ηράκλειο
-DESCRIPTION:Crete International Basketball Tournament - Semi Final\n📺 TV: COSMOTE SPORT 4 HD
+DESCRIPTION:Crete International Basketball Tournament - Semi Final\n📺 TV: COSMOTE SPORT 4 HD\n\nΤΕΛΙΚΟ ΣΚΟΡ: Ολυμπιακός 82-77 Φενέρμπαχτσε\n\n🎬 Highlights: https://www.gazzetta.gr/basketball/euroleague/2566566/olympiakos-fenermpahtse-82-77-ta-highlights-tis-erythroleykis-nikis
 END:VEVENT
 END:VCALENDAR
