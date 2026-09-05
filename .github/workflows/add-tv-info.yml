@@ -25,61 +25,37 @@ jobs:
           p = Path('Olympiakos.ics')
 
           # One-time recovery from the known-good calendar revision before the
-          # accidental truncation. This keeps every existing UID intact.
+          # accidental truncation. Fetch it explicitly because checkout is shallow.
+          subprocess.run(['git', 'fetch', '--no-tags', 'origin', '8bada3bbd236863f8717709aea1c271045ba5573'], check=True)
           subprocess.run(['git', 'checkout', '8bada3bbd236863f8717709aea1c271045ba5573', '--', 'Olympiakos.ics'], check=True)
+
           text = p.read_text(encoding='utf-8')
-          text = text.replace('\\\n', '\n')
-          text = text.replace('\r\n', '\n').replace('\r', '\n')
+          text = text.replace('\\\n', '\n').replace('\r\n', '\n').replace('\r', '\n')
 
           results = {
-              'oly-20260830-football@sotiris': ('Αστέρας Τρίπολης 0-1 Ολυμπιακός', 'https://www.gazzetta.gr/football/superleague/2565210/asteras-olympiakos-0-1-ta-highlights-tis-erythroleykis-nikis'),
-              'oly-20260902-cup-ael@sotiris': ('ΑΕΛ 0-4 Ολυμπιακός', 'https://www.gazzetta.gr/football/kypello-elladas/2566001/ael-olympiakos-ta-highlights-toy-0-4-ton-erythroleykon'),
+              'oly-20260830-football@sotiris': ('0-1', 'Αστέρας Τρίπολης 0-1 Ολυμπιακός', 'https://www.gazzetta.gr/football/superleague/2565210/asteras-olympiakos-0-1-ta-highlights-tis-erythroleykis-nikis'),
+              'oly-20260902-cup-ael@sotiris': ('0-4', 'ΑΕΛ 0-4 Ολυμπιακός', 'https://www.gazzetta.gr/football/kypello-elladas/2566001/ael-olympiakos-ta-highlights-toy-0-4-ton-erythroleykon'),
           }
 
           lines = text.splitlines()
           out = []
           current_uid = ''
-          current_summary = ''
-
           for line in lines:
               if line.startswith('UID:'):
                   current_uid = line[4:]
-              if line.startswith('SUMMARY:'):
-                  current_summary = line[8:]
-                  if current_uid in results:
-                      score_text, _ = results[current_uid]
-                      if '| ΤΕΛΙΚΟ ' not in line:
-                          home_away = current_summary
-                          # Keep the fixture title and append the final score.
-                          line = 'SUMMARY:' + home_away + ' | ΤΕΛΙΚΟ ' + score_text.split(' ', 1)[1].split(' ', 1)[0] if False else line
+              if line.startswith('SUMMARY:') and current_uid in results:
+                  score, _, _ = results[current_uid]
+                  if '| ΤΕΛΙΚΟ ' not in line:
+                      line += ' | ΤΕΛΙΚΟ ' + score
               if line.startswith('DESCRIPTION:') and current_uid in results:
-                  score_text, highlight = results[current_uid]
-                  # Avoid duplicate result/highlights when rerun.
-                  base = line
-                  if '\\n\\nΤΕΛΙΚΟ ΣΚΟΡ:' not in base:
-                      base += '\\n\\nΤΕΛΙΚΟ ΣΚΟΡ: ' + score_text + '\\n\\n🎬 Highlights: ' + highlight
-                  line = base
+                  _, score_text, highlight = results[current_uid]
+                  if '🎬 Highlights:' not in line:
+                      line += '\\n\\nΤΕΛΙΚΟ ΣΚΟΡ: ' + score_text + '\\n\\n🎬 Highlights: ' + highlight
               out.append(line.rstrip('\\'))
 
           text = '\n'.join(out).rstrip() + '\n'
 
-          # Correctly append score to the SUMMARY fields.
-          replacements = {
-              'UID:oly-20260830-football@sotiris': 'ΤΕΛΙΚΟ 0-1',
-              'UID:oly-20260902-cup-ael@sotiris': 'ΤΕΛΙΚΟ 0-4',
-          }
-          lines = text.splitlines()
-          out = []
-          current_uid = ''
-          for line in lines:
-              if line.startswith('UID:'):
-                  current_uid = line[4:]
-              if line.startswith('SUMMARY:') and current_uid in replacements and '| ΤΕΛΙΚΟ ' not in line:
-                  line += ' | ' + replacements[current_uid]
-              out.append(line)
-          text = '\n'.join(out).rstrip() + '\n'
-
-          # Confirmed 04/09/2026 CRETE IBT semi-final. Keep stable UID.
+          # Confirmed 04/09/2026 CRETE IBT semi-final, now completed 82-77.
           uid = 'oly-20260904-crete-ibt-sf@sotiris'
           if f'UID:{uid}' not in text:
               event = (
