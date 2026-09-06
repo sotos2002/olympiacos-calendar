@@ -7,31 +7,50 @@ on:
     branches: [main]
   workflow_dispatch:
 
+concurrency:
+  group: olympiacos-calendar-sync
+  cancel-in-progress: false
+
 permissions:
   contents: write
 
 jobs:
   sync:
+    if: github.actor != 'github-actions[bot]'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
       - name: Add newly confirmed fixtures
-        shell: bash
+        shell: python
         run: |
-          if ! grep -q 'UID:oly-20260908-cup-volos@sotiris' Olympiakos.ics; then
-            sed -i '/END:VCALENDAR/i\\
-          BEGIN:VEVENT\\
-          UID:oly-20260908-cup-volos@sotiris\\
-          DTSTAMP:20260905T000000Z\\
-          DTSTART;TZID=Europe/Athens:20260908T214500\\
-          DTEND;TZID=Europe/Athens:20260908T234500\\
-          SUMMARY:🏆 Ολυμπιακός - Βόλος\\
-          LOCATION:Γ. Καραϊσκάκης\\
-          DESCRIPTION:Κύπελλο Ελλάδας League Phase\\
-          END:VEVENT' Olympiakos.ics
-          fi
+          from pathlib import Path
+
+          path = Path('Olympiakos.ics')
+          text = path.read_text(encoding='utf-8')
+
+          fixture = """BEGIN:VEVENT
+          UID:oly-20260908-cup-volos@sotiris
+          DTSTAMP:20260905T000000Z
+          DTSTART;TZID=Europe/Athens:20260908T214500
+          DTEND;TZID=Europe/Athens:20260908T234500
+          SUMMARY:🏆 Ολυμπιακός - Βόλος
+          LOCATION:Γ. Καραϊσκάκης
+          DESCRIPTION:Κύπελλο Ελλάδας League Phase
+          END:VEVENT"""
+
+          uid = 'UID:oly-20260908-cup-volos@sotiris'
+          if uid not in text:
+              fixture = '\n'.join(line.strip() for line in fixture.splitlines())
+              marker = 'END:VCALENDAR'
+              if marker not in text:
+                  raise SystemExit('END:VCALENDAR not found in Olympiakos.ics')
+              text = text.replace(marker, fixture + '\n' + marker, 1)
+              path.write_text(text, encoding='utf-8')
+              print('Added confirmed fixture: Olympiacos - Volos, 2026-09-08 21:45')
+          else:
+              print('Fixture already present; no change needed.')
 
       - name: Commit calendar changes
         run: |
