@@ -599,4 +599,13 @@ SUMMARY:🏀 Ολυμπιακός - Φενέρμπαχτσε | ΤΕΛΙΚΟ 82-7
 LOCATION:Δύο Αοράκια, Ηράκλειο
 DESCRIPTION:Crete International Basketball Tournament - Semi Final\n📺 TV: COSMOTE SPORT 4 HD\n\nΤΕΛΙΚΟ ΣΚΟΡ: Ολυμπιακός 82-77 Φενέρμπαχτσε\n\n🎬 Highlights: https://www.gazzetta.gr/basketball/euroleague/2566566/olympiakos-fenermpahtse-82-77-ta-highlights-tis-erythroleykis-nikis
 END:VEVENT
+BEGIN:VEVENT
+UID:oly-20260908-cup-volos@sotiris
+DTSTAMP:20260905T000000Z
+DTSTART;TZID=Europe/Athens:20260908T214500
+DTEND;TZID=Europe/Athens:20260908T234500
+SUMMARY:🏆 Ολυμπιακός - Βόλος
+LOCATION:Γ. Καραϊσκάκης
+DESCRIPTION:Κύπελλο Ελλάδας League Phase
+END:VEVENT
 END:VCALENDAR
