@@ -2,10 +2,12 @@ name: Add TV info and results to Olympiacos calendar
 
 on:
   schedule:
-    - cron: '5 * * * *'
-  push:
-    branches: [main]
+    - cron: '15 * * * *'
   workflow_dispatch:
+
+concurrency:
+  group: olympiacos-results-update
+  cancel-in-progress: false
 
 permissions:
   contents: write
@@ -32,21 +34,6 @@ jobs:
               'oly-20260902-cup-ael@sotiris': ('0-4', 'ΑΕΛ 0-4 Ολυμπιακός', 'https://www.gazzetta.gr/football/kypello-elladas/2566001/ael-olympiakos-ta-highlights-toy-0-4-ton-erythroleykon'),
               'oly-20260904-crete-ibt-sf@sotiris': ('82-77', 'Ολυμπιακός 82-77 Φενέρμπαχτσε', 'https://www.gazzetta.gr/basketball/euroleague/2566566/olympiakos-fenermpahtse-82-77-ta-highlights-tis-erythroleykis-nikis'),
           }
-
-          # Newly confirmed official fixture: Olympiacos - Volos, Greek Cup,
-          # Tuesday 08/09/2026 at 21:45 at Georgios Karaiskakis.
-          new_fixture = '''BEGIN:VEVENT
-UID:oly-20260908-cup-volos@sotiris
-DTSTAMP:20260905T000000Z
-DTSTART;TZID=Europe/Athens:20260908T214500
-DTEND;TZID=Europe/Athens:20260908T234500
-SUMMARY:🏆 Ολυμπιακός - Βόλος
-LOCATION:Γ. Καραϊσκάκης
-DESCRIPTION:Κύπελλο Ελλάδας League Phase
-END:VEVENT
-'''
-          if 'UID:oly-20260908-cup-volos@sotiris' not in text:
-              text = text.replace('END:VCALENDAR', new_fixture + 'END:VCALENDAR')
 
           lines = text.splitlines()
           out = []
@@ -75,5 +62,5 @@ END:VEVENT
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add Olympiakos.ics
-          git diff --cached --quiet || git commit -m 'Update Olympiacos results and fixtures'
+          git diff --cached --quiet || git commit -m 'Update Olympiacos results and highlights'
           git push
