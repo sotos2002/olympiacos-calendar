@@ -23,8 +23,9 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Add or update confirmed fixtures
-        shell: python
+        shell: bash
         run: |
+          python - <<'PY'
           from pathlib import Path
 
           path = Path('Olympiakos.ics')
@@ -63,8 +64,10 @@ jobs:
 
           if text != original:
               path.write_text(text, encoding='utf-8')
+              print('Calendar updated.')
           else:
               print('No calendar changes needed.')
+          PY
 
       - name: Commit calendar changes
         run: |
