@@ -62,6 +62,15 @@ jobs:
               text = text.replace('UEFA Europa League MD1 | 📺 COSMOTE SPORT | Ώρα: TBC', 'UEFA Europa League MD1 | 📺 COSMOTE SPORT | Ώρα: 22:00', 1)
               print('Synced confirmed fixture: Olympiacos - Jagiellonia, 2026-09-16 22:00')
 
+          # Official Olympiacos BC currently lists the EuroLeague Super Cup
+          # semifinal as Olympiacos - Fenerbahce on 18/09/2026 at 17:00.
+          if 'UID:oly-20260918-supercup-sf@sotiris' in text:
+              old = 'SUMMARY:🏀 Φενέρμπαχτσε - Ολυμπιακός'
+              new = 'SUMMARY:🏀 Ολυμπιακός - Φενέρμπαχτσε'
+              if old in text:
+                  text = text.replace(old, new, 1)
+                  print('Synced confirmed home designation: Olympiacos - Fenerbahce, 2026-09-18 17:00')
+
           if text != original:
               path.write_text(text, encoding='utf-8')
               print('Calendar updated.')
