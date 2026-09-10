@@ -572,7 +572,7 @@ UID:oly-20270406-basket@sotiris
 DTSTAMP:20260831T190000Z
 DTSTART;TZID=Europe/Athens:20270406T204500
 DTEND;TZID=Europe/Athens:20270406T224500
-SUMMARY:🏀 Φενέρμπαχτσε - Ολυμπιακός
+SUMMARY:🏀 Ολυμπιακός - Φενέρμπαχτσε
 DESCRIPTION:EuroLeague R36 | 📺 Novasports\n📺 TV: Novasports
 END:VEVENT
 BEGIN:VEVENT
