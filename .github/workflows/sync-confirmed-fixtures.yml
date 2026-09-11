@@ -71,6 +71,28 @@ jobs:
                   text = text.replace(old, new, 1)
                   print('Synced confirmed home designation: Olympiacos - Fenerbahce, 2026-09-18 17:00')
 
+          # The official Olympiacos schedule currently has no assigned date/time
+          # for Levadiakos - Olympiacos. Remove the old dated event rather than
+          # keeping an unconfirmed date in the subscribed calendar.
+          lines = text.replace('\r\n', '\n').replace('\r', '\n').splitlines()
+          out = []
+          in_levadiakos = False
+          removed = False
+          for line in lines:
+              if line == 'BEGIN:VEVENT':
+                  in_levadiakos = False
+              if line == 'UID:oly-20260919-football@sotiris':
+                  in_levadiakos = True
+                  removed = True
+              if line == 'END:VEVENT' and in_levadiakos:
+                  in_levadiakos = False
+                  continue
+              if not in_levadiakos:
+                  out.append(line)
+          if removed:
+              text = '\n'.join(out).rstrip() + '\n'
+              print('Removed unconfirmed dated event: Levadiakos - Olympiacos (date/time now TBC)')
+
           if text != original:
               path.write_text(text, encoding='utf-8')
               print('Calendar updated.')
