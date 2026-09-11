@@ -385,7 +385,7 @@ UID:oly-20270202-basket@sotiris
 DTSTAMP:20260831T190000Z
 DTSTART;TZID=Europe/Athens:20270202T211500
 DTEND;TZID=Europe/Athens:20270202T231500
-SUMMARY:🏀 Φενέρμπαχτσε - Ολυμπιακός
+SUMMARY:🏀 Ολυμπιακός - Φενέρμπαχτσε
 DESCRIPTION:EuroLeague R31 | 📺 Novasports\n📺 TV: Novasports
 END:VEVENT
 BEGIN:VEVENT
@@ -427,5 +427,14 @@ DTSTART;TZID=Europe/Athens:20270226T211500
 DTEND;TZID=Europe/Athens:20270226T231500
 SUMMARY:🏀 Ολυμπιακός - Βίρτους Μπολόνια
 DESCRIPTION:EuroLeague R36 | 📺 Novasports\n📺 TV: Novasports
+END:VEVENT
+BEGIN:VEVENT
+UID:oly-20260908-cup-volos@sotiris
+DTSTAMP:20260905T000000Z
+DTSTART;TZID=Europe/Athens:20260908T214500
+DTEND;TZID=Europe/Athens:20260908T234500
+SUMMARY:🏆 Ολυμπιακός - Βόλος
+LOCATION:Γ. Καραϊσκάκης
+DESCRIPTION:Κύπελλο Ελλάδας League Phase
 END:VEVENT
 END:VCALENDAR
