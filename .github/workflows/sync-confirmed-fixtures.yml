@@ -50,13 +50,17 @@ jobs:
           DESCRIPTION:Κύπελλο Ελλάδας League Phase
           END:VEVENT'''.replace('          ', ''))
 
-          # Confirmed Europa League MD1.
-          uid = 'UID:oly-20260916-europa@sotiris'
-          if uid in text:
-              text = text.replace('DTSTART;VALUE=DATE:20260916', 'DTSTART;TZID=Europe/Athens:20260916T220000', 1)
-              text = text.replace('UEFA Europa League MD1 | 📺 COSMOTE SPORT | Ώρα: TBC', 'UEFA Europa League MD1 | 📺 COSMOTE SPORT | Ώρα: 22:00', 1)
-              if 'DTEND;TZID=Europe/Athens:20260917T000000' not in text:
-                  text = text.replace('DTSTART;TZID=Europe/Athens:20260916T220000\nSUMMARY:⚽ Ολυμπιακός - Jagiellonia', 'DTSTART;TZID=Europe/Athens:20260916T220000\nDTEND;TZID=Europe/Athens:20260917T000000\nSUMMARY:⚽ Ολυμπιακός - Jagiellonia', 1)
+          # Official Europa League schedule (Olympiacos.org, 29/08/2026).
+          europa = {
+              1: ('20260916T220000','20260917T000000','⚽ Ολυμπιακός - Jagiellonia'),
+              2: ('20261015T220000','20261016T000000','⚽ Marseille - Ολυμπιακός'),
+              3: ('20261022T220000','20261023T000000','⚽ Ολυμπιακός - Sparta Praha'),
+              4: ('20261105T194500','20261105T214500','⚽ Rennes - Ολυμπιακός'),
+              5: ('20261126T194500','20261126T214500','⚽ Ολυμπιακός - AC Milan'),
+              6: ('20261210T220000','20261211T000000','⚽ Celje - Ολυμπιακός'),
+              7: ('20270121T194500','20270121T214500','⚽ Ολυμπιακός - Hoffenheim'),
+              8: ('20270128T220000','20270129T000000','⚽ Torreense - Ολυμπιακός'),
+          }
 
           # Confirmed Super Cup semifinal designation.
           text = text.replace('SUMMARY:🏀 Φενέρμπαχτσε - Ολυμπιακός', 'SUMMARY:🏀 Ολυμπιακός - Φενέρμπαχτσε', 1)
@@ -93,6 +97,7 @@ jobs:
 
           rebuilt = []
           seen_uids = set()
+          seen_europa_rounds = set()
           for block in blocks:
               uid_line = next((x for x in block if x.startswith('UID:')), '')
               uid = uid_line[4:] if uid_line else ''
@@ -104,7 +109,6 @@ jobs:
                   insert_at = next(i for i, x in enumerate(block) if x == uid_line) + 1
                   block[insert_at:insert_at] = [f'DTSTART;TZID=Europe/Athens:{start}', f'DTEND;TZID=Europe/Athens:{end}', f'SUMMARY:{summary}']
 
-              # Normalize EuroLeague dates/times/opponents by official round.
               round_match = next((re.search(r'EuroLeague R(\d+)', x) for x in block if x.startswith('DESCRIPTION:')), None)
               if round_match:
                   r = int(round_match.group(1))
@@ -115,10 +119,31 @@ jobs:
                       block = [x for x in block if not x.startswith('DTSTART') and not x.startswith('DTEND') and not x.startswith('SUMMARY:')]
                       insert_at = next(i for i, x in enumerate(block) if x == uid_line) + 1
                       block[insert_at:insert_at] = [f'DTSTART;TZID=Europe/Athens:{start}', f'DTEND;TZID=Europe/Athens:{end}', f'SUMMARY:{summary}']
+
+              europa_match = next((re.search(r'UEFA Europa League MD(\d+)', x) for x in block if x.startswith('DESCRIPTION:')), None)
+              if europa_match:
+                  r = int(europa_match.group(1))
+                  seen_europa_rounds.add(r)
+                  if r in europa:
+                      start, end, summary = europa[r]
+                      block = [x for x in block if not x.startswith('DTSTART') and not x.startswith('DTEND') and not x.startswith('SUMMARY:')]
+                      insert_at = next(i for i, x in enumerate(block) if x == uid_line) + 1
+                      block[insert_at:insert_at] = [f'DTSTART;TZID=Europe/Athens:{start}', f'DTEND;TZID=Europe/Athens:{end}', f'SUMMARY:{summary}']
               rebuilt.append(block)
 
           header = original.split('BEGIN:VEVENT', 1)[0]
           text = header + '\n'.join('\n'.join(b) for b in rebuilt) + '\nEND:VCALENDAR\n'
+
+          # Add newly assigned Europa League rounds that were not in the calendar.
+          new_europa = [
+              (6,'oly-20261210-europa@sotiris','20261210T220000','20261211T000000','⚽ Celje - Ολυμπιακός'),
+              (7,'oly-20270121-europa@sotiris','20270121T194500','20270121T214500','⚽ Ολυμπιακός - Hoffenheim'),
+              (8,'oly-20270128-europa@sotiris','20270128T220000','20270129T000000','⚽ Torreense - Ολυμπιακός'),
+          ]
+          for r, uid, start, end, summary in new_europa:
+              if uid not in text and r not in seen_europa_rounds:
+                  event = f'''BEGIN:VEVENT\nUID:{uid}\nDTSTAMP:20260911T060000Z\nDTSTART;TZID=Europe/Athens:{start}\nDTEND;TZID=Europe/Athens:{end}\nSUMMARY:{summary}\nDESCRIPTION:UEFA Europa League MD{r}\nEND:VEVENT'''
+                  text = text.replace('END:VCALENDAR', event + '\nEND:VCALENDAR', 1)
 
           # Add newly assigned Super League rounds that were not in the calendar.
           new_football = [
