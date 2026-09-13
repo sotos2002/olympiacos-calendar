@@ -23,10 +23,9 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Sync confirmed fixtures
-        shell: bash
+      - name: Sync confirmed fixtures and venues
+        shell: python
         run: |
-          python - <<'PY'
           from pathlib import Path
           import re
 
@@ -60,8 +59,6 @@ jobs:
               8: ('20270128T220000','20270129T000000','⚽ Torreense - Ολυμπιακός','22:00'),
           }
 
-          text = text.replace('SUMMARY:🏀 Φενέρμπαχτσε - Ολυμπιακός', 'SUMMARY:🏀 Ολυμπιακός - Φενέρμπαχτσε', 1)
-
           football = {
               'oly-20260919-football@sotiris': ('20260920T170000', '20260920T190000', '⚽ Λεβαδειακός - Ολυμπιακός'),
               'oly-20261010-football@sotiris': ('20261011T210000', '20261011T230000', '⚽ Ολυμπιακός - Παναθηναϊκός'),
@@ -73,7 +70,46 @@ jobs:
               'oly-20261128-football@sotiris': ('20261129T190000', '20261129T210000', '⚽ Άρης - Ολυμπιακός'),
           }
 
-          lines = text.splitlines()
+          euro = {
+              1: ('20260924T213000','20260924T233000','🏀 Μπασκόνια - Ολυμπιακός'),
+              2: ('20260929T200000','20260929T220000','🏀 Ζάλγκιρις - Ολυμπιακός'),
+              3: ('20261001T213000','20261001T233000','🏀 Βίρτους Μπολόνια - Ολυμπιακός'),
+              4: ('20261009T211500','20261009T231500','🏀 Ολυμπιακός - Αναντολού Εφές'),
+              5: ('20261013T220000','20261014T000000','🏀 Βαλένθια - Ολυμπιακός'),
+              6: ('20261016T213000','20261016T233000','🏀 Μπαρτσελόνα - Ολυμπιακός'),
+              7: ('20261023T211500','20261023T231500','🏀 Ολυμπιακός - Φενέρμπαχτσε'),
+              8: ('20261028T203000','20261028T223000','🏀 Μπεσίκτας - Ολυμπιακός'),
+              9: ('20261030T211500','20261030T231500','🏀 Ολυμπιακός - Αρμάνι Μιλάνο'),
+              10: ('20261106T211500','20261106T231500','🏀 Ολυμπιακός - Ερυθρός Αστέρας'),
+              11: ('20261112T211500','20261112T231500','🏀 Ολυμπιακός - Dubai Basketball'),
+              12: ('20261117T190000','20261117T210000','🏀 Μακάμπι Τελ Αβίβ - Ολυμπιακός'),
+              13: ('20261120T211500','20261120T231500','🏀 Ολυμπιακός - Ρεάλ Μαδρίτης'),
+              14: ('20261125T211500','20261125T231500','🏀 Ολυμπιακός - Χάποελ Τελ Αβίβ'),
+              15: ('20261204T211500','20261204T231500','🏀 Ολυμπιακός - ASVEL'),
+              16: ('20261211T211500','20261211T231500','🏀 Παναθηναϊκός - Ολυμπιακός'),
+              17: ('20261215T214500','20261215T234500','🏀 Παρί - Ολυμπιακός'),
+              18: ('20261218T203000','20261218T223000','🏀 Ολυμπιακός - Παρτίζαν'),
+              19: ('20261222T210000','20261222T230000','🏀 Μπάγερν Μονάχου - Ολυμπιακός'),
+              20: ('20261230T210000','20261230T230000','🏀 ASVEL - Ολυμπιακός'),
+              21: ('20270107T214500','20270107T234500','🏀 Ρεάλ Μαδρίτης - Ολυμπιακός'),
+              22: ('20270113T211500','20270113T231500','🏀 Ολυμπιακός - Μπασκόνια'),
+              23: ('20270115T211500','20270115T231500','🏀 Ολυμπιακός - Παρί'),
+              24: ('20270121T214500','20270121T234500','🏀 Παρτίζαν - Ολυμπιακός'),
+              25: ('20270128T211500','20270128T231500','🏀 Ολυμπιακός - Μακάμπι Τελ Αβίβ'),
+              26: ('20270203T200000','20270203T220000','🏀 Χάποελ Τελ Αβίβ - Ολυμπιακός'),
+              27: ('20270205T203000','20270205T223000','🏀 Ολυμπιακός - Μπάγερν Μονάχου'),
+              28: ('20270212T211500','20270212T231500','🏀 Ολυμπιακός - Παναθηναϊκός'),
+              29: ('20270305T180000','20270305T200000','🏀 Ντουμπάι - Ολυμπιακός'),
+              30: ('20270310T213000','20270310T233000','🏀 Αρμάνι Μιλάνο - Ολυμπιακός'),
+              31: ('20270312T211500','20270312T231500','🏀 Ολυμπιακός - Μπεσίκτας'),
+              32: ('20270319T210000','20270319T230000','🏀 Ερυθρός Αστέρας - Ολυμπιακός'),
+              33: ('20270324T211500','20270324T231500','🏀 Ολυμπιακός - Μπαρτσελόνα'),
+              34: ('20270326T211500','20270326T231500','🏀 Ολυμπιακός - Βίρτους Μπολόνια'),
+              35: ('20270331T203000','20270331T223000','🏀 Αναντολού Εφές - Ολυμπιακός'),
+              36: ('20270406T204500','20270406T224500','🏀 Φενέρμπαχτσε - Ολυμπιακός'),
+          }
+
+          lines = text.replace('\r\n','\n').replace('\r','\n').splitlines()
           blocks = []
           current = []
           in_event = False
@@ -91,7 +127,9 @@ jobs:
               raise SystemExit('Malformed VEVENT block')
 
           rebuilt = []
-          seen_europa_rounds = set()
+          seen_europa = set()
+          seen_euro = set()
+
           for block in blocks:
               uid_line = next((x for x in block if x.startswith('UID:')), '')
               uid = uid_line[4:] if uid_line else ''
@@ -99,100 +137,97 @@ jobs:
               if uid in football:
                   start, end, summary = football[uid]
                   block = [x for x in block if not x.startswith('DTSTART') and not x.startswith('DTEND') and not x.startswith('SUMMARY:')]
-                  insert_at = next(i for i, x in enumerate(block) if x == uid_line) + 1
-                  block[insert_at:insert_at] = [f'DTSTART;TZID=Europe/Athens:{start}', f'DTEND;TZID=Europe/Athens:{end}', f'SUMMARY:{summary}']
+                  i = block.index(uid_line) + 1
+                  block[i:i] = [f'DTSTART;TZID=Europe/Athens:{start}', f'DTEND;TZID=Europe/Athens:{end}', f'SUMMARY:{summary}']
 
-              round_match = next((re.search(r'EuroLeague R(\d+)', x) for x in block if x.startswith('DESCRIPTION:')), None)
-              if round_match:
-                  r = int(round_match.group(1))
-                  euro = {
-                      1: ('20260924T213000','20260924T233000','🏀 Μπασκόνια - Ολυμπιακός'), 2: ('20260929T200000','20260929T220000','🏀 Ζάλγκιρις - Ολυμπιακός'), 3: ('20261001T213000','20261001T233000','🏀 Βίρτους Μπολόνια - Ολυμπιακός'), 4: ('20261009T211500','20261009T231500','🏀 Ολυμπιακός - Αναντολού Εφές'), 5: ('20261013T220000','20261014T000000','🏀 Βαλένθια - Ολυμπιακός'), 6: ('20261016T213000','20261016T233000','🏀 Μπαρτσελόνα - Ολυμπιακός'), 7: ('20261023T211500','20261023T231500','🏀 Ολυμπιακός - Φενέρμπαχτσε'), 8: ('20261028T203000','20261028T223000','🏀 Μπεσίκτας - Ολυμπιακός'), 9: ('20261030T211500','20261030T231500','🏀 Ολυμπιακός - Αρμάνι Μιλάνο'), 10: ('20261106T211500','20261106T231500','🏀 Ολυμπιακός - Ερυθρός Αστέρας'), 11: ('20261112T211500','20261112T231500','🏀 Ολυμπιακός - Dubai Basketball'), 12: ('20261117T190000','20261117T210000','🏀 Μακάμπι Τελ Αβίβ - Ολυμπιακός'), 13: ('20261120T211500','20261120T231500','🏀 Ολυμπιακός - Ρεάλ Μαδρίτης'), 14: ('20261125T211500','20261125T231500','🏀 Ολυμπιακός - Χάποελ Τελ Αβίβ'), 15: ('20261204T211500','20261204T231500','🏀 Ολυμπιακός - ASVEL'), 16: ('20261211T211500','20261211T231500','🏀 Παναθηναϊκός - Ολυμπιακός'), 17: ('20261215T214500','20261215T234500','🏀 Παρί - Ολυμπιακός'), 18: ('20261218T203000','20261218T223000','🏀 Ολυμπιακός - Παρτίζαν'), 19: ('20261222T210000','20261222T230000','🏀 Μπάγερν Μονάχου - Ολυμπιακός'), 20: ('20261230T210000','20261230T230000','🏀 ASVEL - Ολυμπιακός'), 21: ('20270107T214500','20270107T234500','🏀 Ρεάλ Μαδρίτης - Ολυμπιακός'), 22: ('20270113T211500','20270113T231500','🏀 Ολυμπιακός - Μπασκόνια'), 23: ('20270115T211500','20270115T231500','🏀 Ολυμπιακός - Παρί'), 24: ('20270121T214500','20270121T234500','🏀 Παρτίζαν - Ολυμπιακός'), 25: ('20270128T211500','20270128T231500','🏀 Ολυμπιακός - Μακάμπι Τελ Αβίβ'), 26: ('20270203T200000','20270203T220000','🏀 Χάποελ Τελ Αβίβ - Ολυμπιακός'), 27: ('20270205T203000','20270205T223000','🏀 Ολυμπιακός - Μπάγερν Μονάχου'), 28: ('20270212T211500','20270212T231500','🏀 Ολυμπιακός - Παναθηναϊκός'), 29: ('20270305T180000','20270305T200000','🏀 Ντουμπάι - Ολυμπιακός'), 30: ('20270310T213000','20270310T233000','🏀 Αρμάνι Μιλάνο - Ολυμπιακός'), 31: ('20270312T211500','20270312T231500','🏀 Ολυμπιακός - Μπεσίκτας'), 32: ('20270319T210000','20270319T230000','🏀 Ερυθρός Αστέρας - Ολυμπιακός'), 33: ('20270324T211500','20270324T231500','🏀 Ολυμπιακός - Μπαρτσελόνα'), 34: ('20270326T211500','20270326T231500','🏀 Ολυμπιακός - Βίρτους Μπολόνια'), 35: ('20270331T203000','20270331T223000','🏀 Αναντολού Εφές - Ολυμπιακός'), 36: ('20270406T204500','20270406T224500','🏀 Φενέρμπαχτσε - Ολυμπιακός')}
-                  if r in euro:
-                      start, end, summary = euro[r]
-                      block = [x for x in block if not x.startswith('DTSTART') and not x.startswith('DTEND') and not x.startswith('SUMMARY:')]
-                      insert_at = next(i for i, x in enumerate(block) if x == uid_line) + 1
-                      block[insert_at:insert_at] = [f'DTSTART;TZID=Europe/Athens:{start}', f'DTEND;TZID=Europe/Athens:{end}', f'SUMMARY:{summary}']
-
-              europa_match = next((re.search(r'UEFA Europa League MD(\d+)', x) for x in block if x.startswith('DESCRIPTION:')), None)
-              if europa_match:
-                  r = int(europa_match.group(1))
-                  seen_europa_rounds.add(r)
+              m = next((re.search(r'UEFA Europa League MD(\d+)', x) for x in block if x.startswith('DESCRIPTION:')), None)
+              if m:
+                  r = int(m.group(1))
+                  seen_europa.add(r)
                   if r in europa:
                       start, end, summary, clock = europa[r]
                       block = [x for x in block if not x.startswith('DTSTART') and not x.startswith('DTEND') and not x.startswith('SUMMARY:')]
-                      insert_at = next(i for i, x in enumerate(block) if x == uid_line) + 1
-                      block[insert_at:insert_at] = [f'DTSTART;TZID=Europe/Athens:{start}', f'DTEND;TZID=Europe/Athens:{end}', f'SUMMARY:{summary}']
-                      for i, line in enumerate(block):
+                      i = block.index(uid_line) + 1
+                      block[i:i] = [f'DTSTART;TZID=Europe/Athens:{start}', f'DTEND;TZID=Europe/Athens:{end}', f'SUMMARY:{summary}']
+                      for j, line in enumerate(block):
                           if line.startswith('DESCRIPTION:UEFA Europa League'):
-                              prefix = line.split('|')[0]
-                              block[i] = prefix + ' | Ώρα: ' + clock
+                              block[j] = line.split('|')[0] + ' | Ώρα: ' + clock
 
-              # Official Olympiacos BC announcement dated 09/09/2026:
-              # all home games are temporarily at SUNEL Arena until the new SEF is delivered.
+              m = next((re.search(r'EuroLeague R(\d+)', x) for x in block if x.startswith('DESCRIPTION:')), None)
+              if m:
+                  r = int(m.group(1))
+                  seen_euro.add(r)
+                  if r in euro:
+                      start, end, summary = euro[r]
+                      block = [x for x in block if not x.startswith('DTSTART') and not x.startswith('DTEND') and not x.startswith('SUMMARY:')]
+                      i = block.index(uid_line) + 1
+                      block[i:i] = [f'DTSTART;TZID=Europe/Athens:{start}', f'DTEND;TZID=Europe/Athens:{end}', f'SUMMARY:{summary}']
+
               if any(x.startswith('SUMMARY:🏀 Ολυμπιακός -') for x in block):
                   block = [x for x in block if not x.startswith('LOCATION:')]
-                  insert_at = next((i for i, x in enumerate(block) if x.startswith('DESCRIPTION:')), len(block))
-                  block.insert(insert_at, 'LOCATION:SUNEL Arena')
+                  i = next((j for j, x in enumerate(block) if x.startswith('DESCRIPTION:')), len(block))
+                  block.insert(i, 'LOCATION:SUNEL Arena')
 
               rebuilt.append(block)
 
-          header = original.split('BEGIN:VEVENT', 1)[0]
+          header = text.split('BEGIN:VEVENT', 1)[0]
           text = header + '\n'.join('\n'.join(b) for b in rebuilt) + '\nEND:VCALENDAR\n'
 
-          for r, uid, start, end, summary in [
-              (6,'oly-20261210-europa@sotiris','20261210T220000','20261211T000000','⚽ Celje - Ολυμπιακός'),
-              (7,'oly-20270121-europa@sotiris','20270121T194500','20270121T214500','⚽ Ολυμπιακός - Hoffenheim'),
-              (8,'oly-20270128-europa@sotiris','20270128T220000','20270129T000000','⚽ Torreense - Ολυμπιακός'),
-          ]:
-              if uid not in text and r not in seen_europa_rounds:
-                  event = f'''BEGIN:VEVENT
-UID:{uid}
-DTSTAMP:20260911T060000Z
-DTSTART;TZID=Europe/Athens:{start}
-DTEND;TZID=Europe/Athens:{end}
-SUMMARY:{summary}
-DESCRIPTION:UEFA Europa League MD{r} | Ώρα: {start[9:11]}:{start[11:13]}
-END:VEVENT'''
-                  text = text.replace('END:VCALENDAR', event + '\nEND:VCALENDAR', 1)
-
-          for uid, start, end, summary, comp in [
-              ('oly-20260919-football@sotiris','20260920T170000','20260920T190000','⚽ Λεβαδειακός - Ολυμπιακός','Super League'),
-              ('oly-20261205-football@sotiris','20261205T200000','20261205T220000','⚽ Ολυμπιακός - ΑΕΚ','Super League'),
-              ('oly-20261213-football@sotiris','20261213T170000','20261213T190000','⚽ Ατρόμητος - Ολυμπιακός','Super League'),
-              ('oly-20261220-football@sotiris','20261220T170000','20261220T190000','⚽ Ολυμπιακός - Παναιτωλικός','Super League'),
-              ('oly-20270109-football@sotiris','20270109T193000','20270109T213000','⚽ Καλαμάτα - Ολυμπιακός','Super League'),
-          ]:
+          new_europa = [
+              (6,'oly-20261210-europa@sotiris','20261210T220000','20261211T000000','⚽ Celje - Ολυμπιακός','22:00'),
+              (7,'oly-20270121-europa@sotiris','20270121T194500','20270121T214500','⚽ Ολυμπιακός - Hoffenheim','19:45'),
+              (8,'oly-20270128-europa@sotiris','20270128T220000','20270129T000000','⚽ Torreense - Ολυμπιακός','22:00'),
+          ]
+          for r, uid, start, end, summary, clock in new_europa:
               if uid not in text:
-                  event = f'''BEGIN:VEVENT
+                  add_event(f'''BEGIN:VEVENT
 UID:{uid}
-DTSTAMP:20260911T060000Z
+DTSTAMP:20260913T060000Z
 DTSTART;TZID=Europe/Athens:{start}
 DTEND;TZID=Europe/Athens:{end}
 SUMMARY:{summary}
-DESCRIPTION:{comp}
-END:VEVENT'''
-                  text = text.replace('END:VCALENDAR', event + '\nEND:VCALENDAR', 1)
+DESCRIPTION:UEFA Europa League MD{r} | Ώρα: {clock}
+END:VEVENT''')
 
-          for uid, start, end, summary, r in [
+          new_football = [
+              ('oly-20261205-football@sotiris','20261205T200000','20261205T220000','⚽ Ολυμπιακός - ΑΕΚ'),
+              ('oly-20261213-football@sotiris','20261213T170000','20261213T190000','⚽ Ατρόμητος - Ολυμπιακός'),
+              ('oly-20261220-football@sotiris','20261220T170000','20261220T190000','⚽ Ολυμπιακός - Παναιτωλικός'),
+              ('oly-20270109-football@sotiris','20270109T193000','20270109T213000','⚽ Καλαμάτα - Ολυμπιακός'),
+          ]
+          for uid, start, end, summary in new_football:
+              if uid not in text:
+                  add_event(f'''BEGIN:VEVENT
+UID:{uid}
+DTSTAMP:20260913T060000Z
+DTSTART;TZID=Europe/Athens:{start}
+DTEND;TZID=Europe/Athens:{end}
+SUMMARY:{summary}
+DESCRIPTION:Super League
+END:VEVENT''')
+
+          new_basket = [
               ('oly-20270409-basket@sotiris','20270409T211500','20270409T231500','🏀 Ολυμπιακός - Ζάλγκιρις',37),
               ('oly-20270416-basket@sotiris','20270416T211500','20270416T231500','🏀 Ολυμπιακός - Βαλένθια',38),
-          ]:
+          ]
+          for uid, start, end, summary, r in new_basket:
               if uid not in text:
-                  event = f'''BEGIN:VEVENT
+                  add_event(f'''BEGIN:VEVENT
 UID:{uid}
-DTSTAMP:20260911T060000Z
+DTSTAMP:20260913T060000Z
 DTSTART;TZID=Europe/Athens:{start}
 DTEND;TZID=Europe/Athens:{end}
 SUMMARY:{summary}
 DESCRIPTION:EuroLeague R{r} | 📺 Novasports\\n📺 TV: Novasports
 LOCATION:SUNEL Arena
-END:VEVENT'''
-                  text = text.replace('END:VCALENDAR', event + '\nEND:VCALENDAR', 1)
+END:VEVENT''')
 
-          path.write_text(text, encoding='utf-8')
-          print('Calendar updated.' if text != original else 'No calendar changes needed.')
-          PY
-
+          if text != original:
+              path.write_text(text, encoding='utf-8')
+              print('Calendar updated.')
+          else:
+              print('No calendar changes needed.')
+          
       - name: Commit calendar changes
         run: |
           git config user.name 'github-actions[bot]'
