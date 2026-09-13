@@ -126,6 +126,14 @@ jobs:
                           if line.startswith('DESCRIPTION:UEFA Europa League'):
                               prefix = line.split('|')[0]
                               block[i] = prefix + ' | Ώρα: ' + clock
+
+              # Official Olympiacos BC announcement dated 09/09/2026:
+              # all home games are temporarily at SUNEL Arena until the new SEF is delivered.
+              if any(x.startswith('SUMMARY:🏀 Ολυμπιακός -') for x in block):
+                  block = [x for x in block if not x.startswith('LOCATION:')]
+                  insert_at = next((i for i, x in enumerate(block) if x.startswith('DESCRIPTION:')), len(block))
+                  block.insert(insert_at, 'LOCATION:SUNEL Arena')
+
               rebuilt.append(block)
 
           header = original.split('BEGIN:VEVENT', 1)[0]
@@ -137,7 +145,14 @@ jobs:
               (8,'oly-20270128-europa@sotiris','20270128T220000','20270129T000000','⚽ Torreense - Ολυμπιακός'),
           ]:
               if uid not in text and r not in seen_europa_rounds:
-                  event = f'''BEGIN:VEVENT\nUID:{uid}\nDTSTAMP:20260911T060000Z\nDTSTART;TZID=Europe/Athens:{start}\nDTEND;TZID=Europe/Athens:{end}\nSUMMARY:{summary}\nDESCRIPTION:UEFA Europa League MD{r} | Ώρα: {start[9:11]}:{start[11:13]}\nEND:VEVENT'''
+                  event = f'''BEGIN:VEVENT
+UID:{uid}
+DTSTAMP:20260911T060000Z
+DTSTART;TZID=Europe/Athens:{start}
+DTEND;TZID=Europe/Athens:{end}
+SUMMARY:{summary}
+DESCRIPTION:UEFA Europa League MD{r} | Ώρα: {start[9:11]}:{start[11:13]}
+END:VEVENT'''
                   text = text.replace('END:VCALENDAR', event + '\nEND:VCALENDAR', 1)
 
           for uid, start, end, summary, comp in [
@@ -148,7 +163,14 @@ jobs:
               ('oly-20270109-football@sotiris','20270109T193000','20270109T213000','⚽ Καλαμάτα - Ολυμπιακός','Super League'),
           ]:
               if uid not in text:
-                  event = f'''BEGIN:VEVENT\nUID:{uid}\nDTSTAMP:20260911T060000Z\nDTSTART;TZID=Europe/Athens:{start}\nDTEND;TZID=Europe/Athens:{end}\nSUMMARY:{summary}\nDESCRIPTION:{comp}\nEND:VEVENT'''
+                  event = f'''BEGIN:VEVENT
+UID:{uid}
+DTSTAMP:20260911T060000Z
+DTSTART;TZID=Europe/Athens:{start}
+DTEND;TZID=Europe/Athens:{end}
+SUMMARY:{summary}
+DESCRIPTION:{comp}
+END:VEVENT'''
                   text = text.replace('END:VCALENDAR', event + '\nEND:VCALENDAR', 1)
 
           for uid, start, end, summary, r in [
@@ -156,7 +178,15 @@ jobs:
               ('oly-20270416-basket@sotiris','20270416T211500','20270416T231500','🏀 Ολυμπιακός - Βαλένθια',38),
           ]:
               if uid not in text:
-                  event = f'''BEGIN:VEVENT\nUID:{uid}\nDTSTAMP:20260911T060000Z\nDTSTART;TZID=Europe/Athens:{start}\nDTEND;TZID=Europe/Athens:{end}\nSUMMARY:{summary}\nDESCRIPTION:EuroLeague R{r} | 📺 Novasports\\n📺 TV: Novasports\nEND:VEVENT'''
+                  event = f'''BEGIN:VEVENT
+UID:{uid}
+DTSTAMP:20260911T060000Z
+DTSTART;TZID=Europe/Athens:{start}
+DTEND;TZID=Europe/Athens:{end}
+SUMMARY:{summary}
+DESCRIPTION:EuroLeague R{r} | 📺 Novasports\\n📺 TV: Novasports
+LOCATION:SUNEL Arena
+END:VEVENT'''
                   text = text.replace('END:VCALENDAR', event + '\nEND:VCALENDAR', 1)
 
           path.write_text(text, encoding='utf-8')
